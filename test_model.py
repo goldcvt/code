@@ -49,7 +49,7 @@ def test_same_order_not_dups():
 
 def test_prefers_warehouse_batches_to_shipments():
     sku = "Faceless Rollex"
-    warehouse_batch = Batch(create_id(), sku, 10, today)
+    warehouse_batch = Batch(create_id(), sku, 10)
     shipment_batch = Batch(create_id(), sku, 10, tomorrow)
     line = OrderLine(create_id(), sku, 5)
     allocate(line, [warehouse_batch, shipment_batch])

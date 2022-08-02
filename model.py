@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List, Union, Set
+from typing import List, Optional, Union, Set
 
 from attr import dataclass
 
@@ -11,7 +11,7 @@ class OrderLine():
     qty: int
 
 class Batch():
-    def __init__(self, ref: str, sku: str, qty: int, eta: date) -> None:
+    def __init__(self, ref: str, sku: str, qty: int, eta: Optional[date] = None) -> None:
         self._purchased_qty = qty
         self.ref = ref
         self.sku = sku
@@ -20,7 +20,7 @@ class Batch():
 
     @property
     def en_route(self) -> bool:
-        return self.eta > date.today()
+        return self.eta is not None
 
     @property
     def allocated_qty(self):
