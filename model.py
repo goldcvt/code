@@ -1,6 +1,5 @@
-from datetime import date, datetime
+from datetime import date
 from typing import List, Optional, Union, Set
-
 from attr import dataclass
 
 
@@ -17,6 +16,21 @@ class Batch():
         self.sku = sku
         self.eta = eta
         self._allocations: Set[OrderLine] = set()
+
+    def __gt__(self, other) -> bool:
+        if self.eta is None:
+            return False
+        if other.eta is None:
+            return True
+        return self.eta > other.eta
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Batch):
+            return False
+        return self.ref == other.ref
+
+    def __hash__(self) -> int:
+        return hash(self.ref)
 
     @property
     def en_route(self) -> bool:
@@ -43,15 +57,10 @@ class Batch():
 
 def allocate(line: OrderLine, batches: Union[Batch, List[Batch]]):
     if isinstance(batches, list):
-        available_batches = list(filter(lambda batch: batch.can_allocate(line) == True, batches))
-        if len(available_batches) > 0:
-            available_batches.sort(reverse=True, key=lambda batch: int(not batch.en_route))
-            available_batches.sort(reverse=False, key=lambda batch: datetime.timestamp(datetime(
-                year=batch.eta.year,
-                month=batch.eta.month,
-                day=batch.eta.day
-            )))
-            available_batches[0].allocate(line)
+        batch = next(
+            b for b in sorted(batches) if b.can_allocate(line)
+        )
+        batch.allocate(line)
     else:
         batches.allocate(line)
 
