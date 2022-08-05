@@ -3,11 +3,15 @@ from typing import List, Optional, Union, Set
 from attr import dataclass
 
 
+class OutOfStock(Exception):
+    pass
+
 @dataclass(frozen=True)
 class OrderLine():
     ref: str
     sku: str
     qty: int
+
 
 class Batch():
     def __init__(self, ref: str, sku: str, qty: int, eta: Optional[date] = None) -> None:
@@ -17,6 +21,7 @@ class Batch():
         self.eta = eta
         self._allocations: Set[OrderLine] = set()
 
+    # self gt than other
     def __gt__(self, other) -> bool:
         if self.eta is None:
             return False
@@ -52,15 +57,26 @@ class Batch():
         if line in self._allocations:
             self._allocations.remove(line)
 
+    def sku_match(self, line: OrderLine):
+        return line.sku == self.sku
+
     def can_allocate(self, line: OrderLine) -> bool:
-        return self.available_qty >= line.qty and line.sku == self.sku
+        return self.available_qty >= line.qty and self.sku_match(line)
+
 
 def allocate(line: OrderLine, batches: Union[Batch, List[Batch]]):
     if isinstance(batches, list):
-        batch = next(
-            b for b in sorted(batches) if b.can_allocate(line)
-        )
-        batch.allocate(line)
+        try:
+            batch = next(
+                b for b in sorted(batches) if b.can_allocate(line)
+            )
+            print(list(b for b in sorted(batches) if b.can_allocate(line)))
+            print("yay")
+            batch.allocate(line)
+        except StopIteration:
+            raise OutOfStock(f"SKU {line.sku} is out of stock")
     else:
+        if not batches.can_allocate(line) and batches.sku_match(line):
+            raise OutOfStock(f"SKU {line.sku} is out of stock")
         batches.allocate(line)
 

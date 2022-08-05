@@ -4,7 +4,7 @@ import pytest
 from random import choice
 from string import ascii_uppercase, digits
 
-from model import Batch, OrderLine, allocate
+from model import Batch, OrderLine, OutOfStock, allocate
 
 
 
@@ -88,3 +88,18 @@ def test_cant_allocate_different_sku():
     allocate(line, batch)
     assert batch.available_qty == 10
 
+def test_out_of_stock_raises_OutOfStock_single():
+    batch, line = create_batch_and_orderline(5, 5)
+    allocate(line, batch)
+    assert batch.available_qty == 0
+    _, excessive_line = create_batch_and_orderline(5, 5)
+    with pytest.raises(OutOfStock, match="Lamp Unique"):
+        allocate(excessive_line, batch)
+
+def test_out_of_stock_raises_OutOfStock():
+    batch, line = create_batch_and_orderline(5, 5)
+    allocate(line, batch)
+    assert batch.available_qty == 0
+    _, excessive_line = create_batch_and_orderline(5, 5)
+    with pytest.raises(OutOfStock, match="Lamp Unique"):
+        allocate(excessive_line, [batch])
